@@ -16,22 +16,22 @@ And if you want to have individual sensor values for the attributes, e.g. for gr
 ```yaml
 - platform: template
   sensors:
-    elliot_heart_rate:
+    owlet_heart_rate:
       value_template: "{{states.sensor.owlet_smart_sock_[YOUR_SMART_SOCK_SERIAL_NUMBER].attributes.heart_rate}}"
       unit_of_measurement: BPM
-    elliot_spo2:
+    owlet_spo2:
       value_template: "{{states.sensor.owlet_smart_sock_[YOUR_SMART_SOCK_SERIAL_NUMBER].attributes.oxygen_saturation}}"
       unit_of_measurement: SPO2
-    elliot_movement:
+    owlet_movement:
       value_template: "{{states.sensor.owlet_smart_sock_[YOUR_SMART_SOCK_SERIAL_NUMBER].attributes.movement}}"
       unit_of_measurement: '%'
-    elliot_owlet_battery:
+    owlet_battery:
       value_template: "{{states.sensor.owlet_smart_sock_[YOUR_SMART_SOCK_SERIAL_NUMBER].attributes.battery}}"
       unit_of_measurement: '%'
-    elliot_owlet_rssi:
+    owlet_rssi:
       value_template: "{{states.sensor.owlet_smart_sock_[YOUR_SMART_SOCK_SERIAL_NUMBER].attributes.ble_rssi}}"
       unit_of_measurement: dBm
-    elliot_owlet_monitoring_status:
+    owlet_monitoring_status:
       value_template: "{{states.sensor.owlet_smart_sock_[YOUR_SMART_SOCK_SERIAL_NUMBER].attributes.ble_rssi}}"
       unit_of_measurement: dBm
 ```
