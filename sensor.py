@@ -249,8 +249,8 @@ class OwletAPI:
                     "HIGH_HR_ALRT": bool(p["HIGH_HR_ALRT"]["value"]),
                     "LOW_HR_ALRT": bool(p["LOW_HR_ALRT"]["value"]),
                     "LOW_OX_ALRT": bool(p["LOW_OX_ALRT"]["value"]),
-                    "SOCK_DISCON_ALRT": "%s" % p["SOCK_DISCON_ALRT"]["value"],
-                    "RED_ALERT_SUMMARY": bool(p["RED_ALERT_SUMMARY"]["value"]),
+                    "SOCK_DISCON_ALRT": bool(p["SOCK_DISCON_ALRT"]["value"]),
+                    "RED_ALERT_SUMMARY": "%s" % p["RED_ALERT_SUMMARY"]["value"],
                     "error": False,
                 }
             elif "CHARGE_STATUS" in p:
