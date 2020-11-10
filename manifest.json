@@ -1,0 +1,14 @@
+{
+    "domain": "owlet",
+    "name": "Owlet Smart Sock",
+    "documentation": "https://github.com/jlamendo/ha-sensor.owlet",
+    "requirements": [
+    "PyJWT", 
+    "gcloud",
+    "sseclient",
+    "requests_toolbelt"
+    ],
+    "codeowners": [
+    "@jlamendo"
+    ]
+}
