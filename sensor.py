@@ -12,7 +12,7 @@ import time, requests, json, datetime
 
 CONF_OWLET_REGION = "region"
 SCAN_INTERVAL = datetime.timedelta(seconds=10)
-COMPONENT_ICON = "mdi:water-pump"
+COMPONENT_ICON = "mdi:heart-pulse"
 COMPONENT_NAME = "Owlet Smart Sock"
 
 
