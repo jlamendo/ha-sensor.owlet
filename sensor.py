@@ -270,6 +270,7 @@ class OwletAPI:
                     "LOW_HR_ALRT": bool(p["LOW_HR_ALRT"]["value"]),
                     "LOW_OX_ALRT": bool(p["LOW_OX_ALRT"]["value"]),
                     "SOCK_DISCON_ALRT": bool(p["SOCK_DISCON_ALRT"]["value"]),
+                    "RED_ALERT_SUMMARY": "",
                     "error": False,
                 }
         return {"dsn": dsn, "error": True}
