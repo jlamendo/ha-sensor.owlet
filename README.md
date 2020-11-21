@@ -4,9 +4,18 @@ Owlet Smart Sock v2/v3 Sensor Integration for HomeAssistant using the modern Owl
 Credit for getting the new API to work goes to @mbevand for their work in https://github.com/mbevand/owlet_monitor/blob/master/owlet_monitor, which I borrowed from heavily while writing this.
 
 # Installation:
-Clone this repository into your "custom_components" directory on homeassistant, and add the sensor configuration into your configuration.yml.
+### Manual Install:
+Clone this repository, and move the `ha-sensor.owlet/custom_components/owlet` directory into your "custom_components" directory on homeassistant.
 
-Example:
+ and add the sensor configuration into your configuration.yml.
+
+### HACS Install:
+
+Add this repository as a custom repository in HACS under the type "integration."
+
+### Both:
+
+After installing the integration, you need to enable it by adding the sensor configuration into your configuration.yml - example:
 ```yaml
 sensor:
   - platform: owlet
