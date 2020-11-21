@@ -1,0 +1,9 @@
+{
+    "name": "Owlet Smart Sock",
+    "hacs": "1.6.1",
+    "domains": [
+        "sensor"
+    ],
+    "iot_class": "Cloud Polling",
+    "homeassistant": "0.118.2"
+}
