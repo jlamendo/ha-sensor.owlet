@@ -1,4 +1,4 @@
-"""Platform for sensor integration."""
+"""Owlet Smart Sock Sensor integration."""
 import logging
 import homeassistant.helpers.config_validation as cv
 
@@ -358,6 +358,7 @@ class OwletSmartSock(Entity):
             self.__attributes["LOW_OX_ALRT"] = False
             self.__attributes["SOCK_DISCON_ALRT"] = True
             self.__attributes["RED_ALERT_SUMMARY"] = ""
+            self.__attributes["active"] = False
         else:
             if "heart_rate" in state and int(state["heart_rate"]) > 0:
                 self.__state = "Connected"
@@ -375,6 +376,7 @@ class OwletSmartSock(Entity):
                 self.__attributes["LOW_OX_ALRT"] = state["LOW_OX_ALRT"]
                 self.__attributes["SOCK_DISCON_ALRT"] = state["SOCK_DISCON_ALRT"]
                 self.__attributes["RED_ALERT_SUMMARY"] = state["RED_ALERT_SUMMARY"]
+                self.__attributes["active"] = ( bool(state["base_station_on"]) and not bool(state["SOCK_DISCON_ALRT"]) and not bool(state["charge_status"]) and not bool(state["LOW_INTEG_READ"]) )
             else:
                 self.__state = "Disconnected"
                 self.__attributes["dsn"] = None
@@ -391,3 +393,4 @@ class OwletSmartSock(Entity):
                 self.__attributes["LOW_OX_ALRT"] = False
                 self.__attributes["SOCK_DISCON_ALRT"] = True
                 self.__attributes["RED_ALERT_SUMMARY"] = ""
+                self.__attributes["active"] = False
