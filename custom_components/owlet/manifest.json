@@ -1,6 +1,7 @@
 {
     "domain": "owlet",
     "name": "Owlet Smart Sock",
+    "version": "0.1.0",
     "documentation": "https://github.com/jlamendo/ha-sensor.owlet",
     "requirements": [
     "PyJWT", 
