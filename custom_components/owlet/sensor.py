@@ -340,9 +340,12 @@ class OwletSmartSock(Entity):
 
     def update(self):
         """Fetch latest vital signs from the Owlet API"""
+        
         if self.__state == "Disconnected":
             self.__Owlet.authenticate(True)
+
         state = self.__Owlet.vitals(self.__DSN)
+
         if state["error"] != False:
             self.__state = "Disconnected"
             self.__attributes["dsn"] = None
@@ -361,37 +364,34 @@ class OwletSmartSock(Entity):
             self.__attributes["RED_ALERT_SUMMARY"] = ""
             self.__attributes["active"] = False
         else:
+            self.__attributes["dsn"] = state["dsn"]
+            self.__attributes["heart_rate"] = state["heart_rate"]
+            self.__attributes["base_station_on"] = state["base_station_on"]
+            self.__attributes["oxygen_saturation"] = state["oxygen_saturation"]
+            self.__attributes["movement"] = state["movement"]
+            self.__attributes["battery"] = state["battery"]
+            self.__attributes["charge_status"] = state["charge_status"]
+            self.__attributes["ble_rssi"] = state["ble_rssi"]
+            self.__attributes["LOW_INTEG_READ"] = state["LOW_INTEG_READ"]
+            self.__attributes["LOW_BATT_ALRT"] = state["LOW_BATT_ALRT"]
+            self.__attributes["HIGH_HR_ALRT"] = state["HIGH_HR_ALRT"]
+            self.__attributes["LOW_HR_ALRT"] = state["LOW_HR_ALRT"]
+            self.__attributes["LOW_OX_ALRT"] = state["LOW_OX_ALRT"]
+            self.__attributes["SOCK_DISCON_ALRT"] = state["SOCK_DISCON_ALRT"]
+            self.__attributes["RED_ALERT_SUMMARY"] = state["RED_ALERT_SUMMARY"]
+            self.__attributes["active"] = ( bool(state["base_station_on"]) and not bool(state["SOCK_DISCON_ALRT"]) and not bool(state["charge_status"]) and not bool(state["LOW_INTEG_READ"]) )
+
+            """Set state and/or override values if not connected"""
             if "heart_rate" in state and int(state["heart_rate"]) > 0:
                 self.__state = "Connected"
-                self.__attributes["dsn"] = state["dsn"]
-                self.__attributes["heart_rate"] = state["heart_rate"]
-                self.__attributes["base_station_on"] = state["base_station_on"]
-                self.__attributes["oxygen_saturation"] = state["oxygen_saturation"]
-                self.__attributes["movement"] = state["movement"]
-                self.__attributes["battery"] = state["battery"]
-                self.__attributes["ble_rssi"] = state["ble_rssi"]
-                self.__attributes["LOW_INTEG_READ"] = state["LOW_INTEG_READ"]
-                self.__attributes["LOW_BATT_ALRT"] = state["LOW_BATT_ALRT"]
-                self.__attributes["HIGH_HR_ALRT"] = state["HIGH_HR_ALRT"]
-                self.__attributes["LOW_HR_ALRT"] = state["LOW_HR_ALRT"]
-                self.__attributes["LOW_OX_ALRT"] = state["LOW_OX_ALRT"]
-                self.__attributes["SOCK_DISCON_ALRT"] = state["SOCK_DISCON_ALRT"]
-                self.__attributes["RED_ALERT_SUMMARY"] = state["RED_ALERT_SUMMARY"]
-                self.__attributes["active"] = ( bool(state["base_station_on"]) and not bool(state["SOCK_DISCON_ALRT"]) and not bool(state["charge_status"]) and not bool(state["LOW_INTEG_READ"]) )
             else:
-                self.__state = "Disconnected"
-                self.__attributes["dsn"] = None
                 self.__attributes["heart_rate"] = None
                 self.__attributes["base_station_on"] = None
                 self.__attributes["oxygen_saturation"] = None
                 self.__attributes["movement"] = None
-                self.__attributes["battery"] = None
-                self.__attributes["ble_rssi"] = None
-                self.__attributes["LOW_INTEG_READ"] = True
-                self.__attributes["LOW_BATT_ALRT"] = False
-                self.__attributes["HIGH_HR_ALRT"] = False
-                self.__attributes["LOW_HR_ALRT"] = False
-                self.__attributes["LOW_OX_ALRT"] = False
-                self.__attributes["SOCK_DISCON_ALRT"] = True
-                self.__attributes["RED_ALERT_SUMMARY"] = ""
-                self.__attributes["active"] = False
+                if "charge_status" in state and int(state["charge_status"]) == 1:
+                    self.__state = "Charging"
+                elif "charge_status" in state and int(state["charge_status"]) == 2:
+                    self.__state = "Charged"
+                else:
+                    self.__state = "Disconnected"
