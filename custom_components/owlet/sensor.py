@@ -6,6 +6,7 @@ from homeassistant.components.sensor import PLATFORM_SCHEMA
 from homeassistant.const import CONF_PASSWORD, CONF_USERNAME
 from homeassistant.helpers.entity import Entity
 import voluptuous as vol
+from dateutil import parser as date
 
 
 import time, requests, json, datetime
@@ -159,8 +160,8 @@ class OwletAPI:
             or (self.__OWLET_TOKEN_EXPIRE_TIME is None)
             or (time.time() >= self.__OWLET_TOKEN_EXPIRE_TIME)
         ):
-            self.__OWLET_TOKEN = self.authenticate()
-        return self.__OWLET_TOKEN
+            return False
+        return True
 
     def get_devices(self):
         try:
@@ -223,6 +224,7 @@ class OwletAPI:
                 self.__client = requests.session()
                 return False, False
             response_body = r.json()
+            _LOGGER.error("OWLET: %s" % json.dumps(r.json()))
             for prop in response_body:
                 device_props[prop["property"]["name"]] = prop["property"]
             return device_props, timestamp
@@ -249,10 +251,16 @@ class OwletAPI:
                     "HIGH_HR_ALRT": bool(p["HIGH_HR_ALRT"]["value"]),
                     "LOW_HR_ALRT": bool(p["LOW_HR_ALRT"]["value"]),
                     "LOW_OX_ALRT": bool(p["LOW_OX_ALRT"]["value"]),
+                    "DISCOMFORT_ALRT": bool(p["DISCOMFORT_ALRT"]["value"]),
                     "SOCK_DISCON_ALRT": bool(p["SOCK_DISCON_ALRT"]["value"]),
+                    "PREVIEW_LOW_PRIORITY_ALARM": bool(p["PREVIEW_LOW_PRIORITY_ALARM"]["value"]),
+                    "PREVIEW_HIGH_PRIORITY_ALARM": bool(p["PREVIEW_HIGH_PRIORITY_ALARM"]["value"]),
+                    "PREVIEW_MED_PRIORITY_ALARM": bool(p["PREVIEW_MED_PRIORITY_ALARM"]["value"]),
                     "RED_ALERT_SUMMARY": "%s" % p["RED_ALERT_SUMMARY"]["value"],
+                    "ts": date.parse(p["REAL_TIME_VITALS"]["data_updated_at"]),
+#                    "rt_vitals": rt_vitals,
                     "error": False,
-                }
+                }, p
             elif "CHARGE_STATUS" in p:
                 # Sock is a Smart Sock 2
                 return {
@@ -272,8 +280,8 @@ class OwletAPI:
                     "SOCK_DISCON_ALRT": bool(p["SOCK_DISCON_ALRT"]["value"]),
                     "RED_ALERT_SUMMARY": "",
                     "error": False,
-                }
-        return {"dsn": dsn, "error": True}
+                }, p
+        return {"dsn": dsn, "error": True}, p
 
 
 def setup_platform(hass, config, add_entities, discovery_info=None):
@@ -311,87 +319,133 @@ class OwletSmartSock(Entity):
         return self.__state
 
     @property
-    def device_state_attributes(self):
+    def extra_state_attributes(self):
         """Return device specific state attributes."""
         return self.__attributes
 
     def _setup_state(self):
-        self.__state = "disconnected"
+        self.__state = "Disconnected"
 
     def _setup_attributes(self):
         self.__attributes = {
             "dsn": self.__DSN,
-            "charge_status": 0,
-            "heart_rate": "%d" % 0,
-            "base_station_on": 0,
-            "oxygen_saturation": "%d" % 0,
-            "movement": "%d" % 0,
-            "battery": "%d" % 0,
-            "ble_rssi": "%d" % 0,
+            "charge_status": None,
+            "heart_rate": None,
+            "base_station_on": None,
+            "oxygen_saturation": None,
+            "movement": None,
+            "battery": None,
+            "ble_rssi": None,
             "active": False,
-            "LOW_INTEG_READ": False,
-            "LOW_BATT_ALRT": False,
-            "HIGH_HR_ALRT": False,
-            "LOW_HR_ALRT": False,
-            "LOW_OX_ALRT": False,
-            "SOCK_DISCON_ALRT": False,
-            "RED_ALERT_SUMMARY": "",
+            "alarm": None,
+            "alerts": None,
+#            "raw_json": None,
+            "rt_vitals": {},
+            "ts": None
         }
+
+    def _clr(self, state):
+        self.__tmp_attributes = {
+            "dsn": self.__DSN,
+            "charge_status": None,
+            "heart_rate": None,
+            "base_station_on": None,
+            "oxygen_saturation": None,
+            "movement": None,
+            "battery": None,
+            "ble_rssi": None,
+            "active": False,
+            "alarm": None,
+            "alerts": None,
+#            "raw_json": None,
+            "rt_vitals": {},
+            "ts": None
+            
+        }
+        self.__state = state
+
+
+    def _set_state(self, state=False, attrs=False):
+        if not attrs:
+            attrs = ["dsn", "heart_rate", "charge_status", "base_station_on", "ts", "rt_vitals", "oxygen_saturation", "movement", "battery", "ble_rssi"]#, "LOW_INTEG_READ", "LOW_BATT_ALRT", "HIGH_HR_ALRT", "LOW_HR_ALRT", "LOW_OX_ALRT", "SOCK_DISCON_ALRT"]
+        if not self.__tmp_attributes or "dsn" not in self.__tmp_attributes:
+            self.__tmp_attributes = self.__attributes
+        if state:
+            for attr in (k for k in attrs if k in state):
+                self.__tmp_attributes[attr] = state[attr]
+            tmp_alarm_active = False
+            for k in ["LOW","MED","HIGH"]:
+                if "PREVIEW_" + k + "_PRIORITY_ALARM" in state and int(state["PREVIEW_" + k + "_PRIORITY_ALARM" ]) == 1:
+                    self.__tmp_attributes["alarm"] = k
+                    tmp_alarm_active = True
+            if not tmp_alarm_active:
+                self.__tmp_attributes["alarm"] = None
+            tmp_active_alerts = ""
+            for k in ["LOW_INTEG_READ","LOW_BATT_ALRT","HIGH_HR_ALRT","LOW_HR_ALRT", "LOW_OX_ALRT", "SOCK_DISCON_ALRT","DISCOMFORT_ALRT"]:
+                if  k  in state and int(state[k]) == 1:
+                    tmp_active_alerts = tmp_active_alerts + k + ","
+            if len(tmp_active_alerts) > 0:
+                self.__tmp_attributes["alerts"] = tmp_active_alerts.rstrip(',')
+
+        self.__attributes = self.__tmp_attributes
+        self.__tmp_attributes = {}
 
     def update(self):
         """Fetch latest vital signs from the Owlet API"""
-        if self.__state == "Disconnected":
+        # States = ["Monitoring", "Charging", "Charged", "LOW_INTEG_READ", "Disconnected", "Error"]
+        if self.__state == "Error":
             self.__Owlet.authenticate(True)
-        state = self.__Owlet.vitals(self.__DSN)
+        elif self.__state == "Disconnected":
+            self.__Owlet.authenticate(True)
+
+        if not self.__Owlet.token:
+            self.__Owlet.authenticate()
+
+    
+        state, raw_json = self.__Owlet.vitals(self.__DSN)
+        # If we get an error, just flag it and exit
+
         if state["error"] != False:
-            self.__state = "Disconnected"
-            self.__attributes["dsn"] = None
-            self.__attributes["heart_rate"] = None
-            self.__attributes["base_station_on"] = None
-            self.__attributes["oxygen_saturation"] = None
-            self.__attributes["movement"] = None
-            self.__attributes["battery"] = None
-            self.__attributes["ble_rssi"] = None
-            self.__attributes["LOW_INTEG_READ"] = True
-            self.__attributes["LOW_BATT_ALRT"] = False
-            self.__attributes["HIGH_HR_ALRT"] = False
-            self.__attributes["LOW_HR_ALRT"] = False
-            self.__attributes["LOW_OX_ALRT"] = False
-            self.__attributes["SOCK_DISCON_ALRT"] = True
-            self.__attributes["RED_ALERT_SUMMARY"] = ""
+            self._clr("Error")
+            self._set_state()
             self.__attributes["active"] = False
         else:
-            if "heart_rate" in state and int(state["heart_rate"]) > 0:
-                self.__state = "Connected"
-                self.__attributes["dsn"] = state["dsn"]
-                self.__attributes["heart_rate"] = state["heart_rate"]
-                self.__attributes["base_station_on"] = state["base_station_on"]
-                self.__attributes["oxygen_saturation"] = state["oxygen_saturation"]
-                self.__attributes["movement"] = state["movement"]
-                self.__attributes["battery"] = state["battery"]
-                self.__attributes["ble_rssi"] = state["ble_rssi"]
-                self.__attributes["LOW_INTEG_READ"] = state["LOW_INTEG_READ"]
-                self.__attributes["LOW_BATT_ALRT"] = state["LOW_BATT_ALRT"]
-                self.__attributes["HIGH_HR_ALRT"] = state["HIGH_HR_ALRT"]
-                self.__attributes["LOW_HR_ALRT"] = state["LOW_HR_ALRT"]
-                self.__attributes["LOW_OX_ALRT"] = state["LOW_OX_ALRT"]
-                self.__attributes["SOCK_DISCON_ALRT"] = state["SOCK_DISCON_ALRT"]
-                self.__attributes["RED_ALERT_SUMMARY"] = state["RED_ALERT_SUMMARY"]
-                self.__attributes["active"] = ( bool(state["base_station_on"]) and not bool(state["SOCK_DISCON_ALRT"]) and not bool(state["charge_status"]) and not bool(state["LOW_INTEG_READ"]) )
-            else:
-                self.__state = "Disconnected"
-                self.__attributes["dsn"] = None
-                self.__attributes["heart_rate"] = None
-                self.__attributes["base_station_on"] = None
-                self.__attributes["oxygen_saturation"] = None
-                self.__attributes["movement"] = None
-                self.__attributes["battery"] = None
-                self.__attributes["ble_rssi"] = None
-                self.__attributes["LOW_INTEG_READ"] = True
-                self.__attributes["LOW_BATT_ALRT"] = False
-                self.__attributes["HIGH_HR_ALRT"] = False
-                self.__attributes["LOW_HR_ALRT"] = False
-                self.__attributes["LOW_OX_ALRT"] = False
-                self.__attributes["SOCK_DISCON_ALRT"] = True
-                self.__attributes["RED_ALERT_SUMMARY"] = ""
+            bpm_integ = bool("heart_rate" in state and int(state["heart_rate"]) > 0 and not bool(state["LOW_HR_ALRT"]))
+            spo2_integ = bool("oxygen_saturation" in state and int(state["oxygen_saturation"]) > 0 and not bool(state["LOW_OX_ALRT"]))
+            # Truth table for detecting "yellow alerts" - aka sock is connected, powered on, but has no signal.
+            #   LIR      bpm   sp02         low_read_integ
+            #    0 OR 1 ( 0 NOR 0 = 1 )    = 1  // No LIR, No HR + Not LowHR Alert or No SPO2 + Not LowOX Alert = LIR. If there's no ox/bpm alerts, but they are both zero, we can conclude the sensor can't get a read even w/o the integ alert.
+            #    0 OR 0 ( 0 NOR 1 = 0 )    = 0  // No LIR, And only one of HR/OX is low. If this is the case, the sensor is reading one of the measurements but the other is 0, something fishy is going on other than integrity. We want to not mark this as LIR, so that alerts can fire if need be.
+            #    0 OR 0 ( 1 NOR 0 = 0 )    = 0  // No LIR, And only one of HR/OX is low. If this is the case, the sensor is reading one of the measurements but the other is 0, something fishy is going on other than integrity. We want to not mark this as LIR, so that alerts can fire if need be.
+            #    0 OR 0 ( 1 NOR 1 = 0 )    = 0  // Good state - good readings from everything.
+            #    1 OR 1 ( 0 NOR 0 = 1 )    = 1  // All readings are bad - a clear case of no signal.
+            #    1 OR 0 ( 0 NOR 1 = 0 )    = 1  // LIR alert is firing, but only one reading is bad. Unlikely to ever happen, but if it does, trust owlet and mark it as no signal
+            #    1 OR 0 ( 1 NOR 0 = 0 )    = 1  // LIR alert is firing, but only one reading is bad. Unlikely to ever happen, but if it does, trust owlet and mark it as no signal
+            #    1 OR 0 ( 1 NOR 1 = 0 )    = 1  // LIR alert is firing, but both signals are good. Shouldn't ever happen, if it does, trust the owlet.
+            LIR = bool("LOW_INTEG_READ" in state and bool(state["LOW_INTEG_READ"]) or (not bpm_integ and not spo2_integ))
+            
+            # Regardless of what base_station_on says, the vitals are king here. If we're getting readings, let them through. Might need to be tuned later.
+            base_station_dc = bool(("base_station_on" in state and int(state["base_station_on"]) != 1) and LIR)
+
+            if base_station_dc:
+                self._clr("Disconnected")
+                self._set_state(state, ["charge_status", "base_station_on"])
                 self.__attributes["active"] = False
+            elif LIR:
+                if "charge_status" in state and int(state["charge_status"]) == 1:
+                    self._clr("Charging")
+                    self._set_state(state, ["charge_status", "base_station_on"])
+                elif "charge_status" in state and int(state["charge_status"]) == 2:
+                    self._clr("Charged")
+                    self._set_state(state, ["charge_status", "base_station_on"])
+                else:
+                    self._clr("LOW_INTEG_READ")
+                    self._set_state(state, ["charge_status", "base_station_on", "battery", "ble_rssi"])
+            else:
+                self._clr("Monitoring")
+                self._set_state(state)
+                _LOGGER.error("OWLET_STATE: %s" % state)
+                _LOGGER.error("OWLET_attributes: %s" % self.__attributes)
+                self.__attributes["active"] = True
+#        self.__attributes["raw_json"] = raw_json
+        
