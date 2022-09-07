@@ -25,24 +25,24 @@ sensor:
 ```
 And if you want to have individual sensor values for the attributes, e.g. for graphing in grafana via prometheus, you can use value_templates:
 ```yaml
-- platform: template
-  sensors:
-    owlet_heart_rate:
-      value_template: "{{states.sensor.owlet_smart_sock_[YOUR_SMART_SOCK_SERIAL_NUMBER].attributes.heart_rate}}"
+template:
+  sensor:
+    - name: "owlet_heart_rate"
+      state: "{{states.sensor.owlet_smart_sock_ac000w016676179.attributes.heart_rate}}"
       unit_of_measurement: BPM
-    owlet_spo2:
-      value_template: "{{states.sensor.owlet_smart_sock_[YOUR_SMART_SOCK_SERIAL_NUMBER].attributes.oxygen_saturation}}"
+    - name: "owlet_spo2"
+      state: "{{states.sensor.owlet_smart_sock_ac000w016676179.attributes.oxygen_saturation}}"
       unit_of_measurement: SPO2
-    owlet_movement:
-      value_template: "{{states.sensor.owlet_smart_sock_[YOUR_SMART_SOCK_SERIAL_NUMBER].attributes.movement}}"
+    - name: "owlet_movement"
+      state: "{{states.sensor.owlet_smart_sock_ac000w016676179.attributes.movement}}"
       unit_of_measurement: '%'
-    owlet_battery:
-      value_template: "{{states.sensor.owlet_smart_sock_[YOUR_SMART_SOCK_SERIAL_NUMBER].attributes.battery}}"
+    - name: "owlet_battery"
+      state: "{{states.sensor.owlet_smart_sock_ac000w016676179.attributes.battery}}"
       unit_of_measurement: '%'
-    owlet_rssi:
-      value_template: "{{states.sensor.owlet_smart_sock_[YOUR_SMART_SOCK_SERIAL_NUMBER].attributes.ble_rssi}}"
+    - name: "owlet_rssi"
+      state: "{{states.sensor.owlet_smart_sock_ac000w016676179.attributes.ble_rssi}}"
       unit_of_measurement: dBm
-    owlet_monitoring_status:
-      value_template: "{{states.sensor.owlet_smart_sock_[YOUR_SMART_SOCK_SERIAL_NUMBER].attributes.ble_rssi}}"
+    - name: "owlet_monitoring_status"
+      state: "{{states.sensor.owlet_smart_sock_ac000w016676179.attributes.ble_rssi}}"
       unit_of_measurement: dBm
 ```
