@@ -224,7 +224,7 @@ class OwletAPI:
                 self.__client = requests.session()
                 return False, False
             response_body = r.json()
-            _LOGGER.error("OWLET: %s" % json.dumps(r.json()))
+            _LOGGER.debug("OWLET: %s" % json.dumps(r.json()))
             for prop in response_body:
                 device_props[prop["property"]["name"]] = prop["property"]
             return device_props, timestamp
@@ -444,8 +444,8 @@ class OwletSmartSock(Entity):
             else:
                 self._clr("Monitoring")
                 self._set_state(state)
-                _LOGGER.error("OWLET_STATE: %s" % state)
-                _LOGGER.error("OWLET_attributes: %s" % self.__attributes)
+                _LOGGER.debug("OWLET_STATE: %s" % state)
+                _LOGGER.debug("OWLET_attributes: %s" % self.__attributes)
                 self.__attributes["active"] = True
 #        self.__attributes["raw_json"] = raw_json
         
