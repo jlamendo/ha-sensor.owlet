@@ -251,7 +251,7 @@ class OwletAPI:
                     "HIGH_HR_ALRT": bool(p["HIGH_HR_ALRT"]["value"]),
                     "LOW_HR_ALRT": bool(p["LOW_HR_ALRT"]["value"]),
                     "LOW_OX_ALRT": bool(p["LOW_OX_ALRT"]["value"]),
-                    "DISCOMFORT_ALRT": bool(p["DISCOMFORT_ALRT"]["value"]),
+                    "DISCOMFORT_ALRT": bool(p.get("DISCOMFORT_ALRT",{"value":0})["value"]),
                     "SOCK_DISCON_ALRT": bool(p["SOCK_DISCON_ALRT"]["value"]),
                     "PREVIEW_LOW_PRIORITY_ALARM": bool(p["PREVIEW_LOW_PRIORITY_ALARM"]["value"]),
                     "PREVIEW_HIGH_PRIORITY_ALARM": bool(p["PREVIEW_HIGH_PRIORITY_ALARM"]["value"]),
