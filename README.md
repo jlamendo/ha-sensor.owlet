@@ -43,6 +43,5 @@ template:
       state: "{{states.sensor.owlet_smart_sock_ac000w016676179.attributes.ble_rssi}}"
       unit_of_measurement: dBm
     - name: "owlet_monitoring_status"
-      state: "{{states.sensor.owlet_smart_sock_ac000w016676179.attributes.ble_rssi}}"
-      unit_of_measurement: dBm
+      state: "{{states.sensor.owlet_smart_sock_ac000w016676179.state}}"
 ```
