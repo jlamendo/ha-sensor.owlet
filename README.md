@@ -23,7 +23,7 @@ sensor:
     password: !secret owlet_password
     region: "world"
 ```
-And if you want to have individual sensor values for the attributes, e.g. for graphing in grafana via prometheus, you can use value_templates:
+And if you want to have individual sensor values for the attributes (e.g. for graphing in grafana via prometheus), you can use value_templates as described below. Each sock's DSN will be embedded in the sensor string (in this case, `ac000w016676179`), so make sure to change that.
 ```yaml
 template:
   sensor:
